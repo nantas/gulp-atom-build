@@ -1,0 +1,19 @@
+{
+  "name": "polymer-test",
+  "version": "0.0.0",
+  "authors": [
+    "Nan Wang <nantas@gmail.com>"
+  ],
+  "description": "first polymer app project.",
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "polymer": "Polymer/polymer#~0.5.1"
+  }
+}

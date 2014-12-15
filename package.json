@@ -1,0 +1,12 @@
+{
+  "name": "Nantas",
+  "version": "0.1.0",
+  "main": "main.js",
+  "devDependencies": {
+    "gulp": "^3.8.10",
+    "gulp-download-atom-shell": "fireball-x/gulp-download-atom-shell",
+    "gulp-shell": "^0.2.11",
+    "gulp-util": "^3.0.1",
+    "wrench": "^1.5.8"
+  }
+}
