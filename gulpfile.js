@@ -6,12 +6,12 @@ var path = require('path');
 var os = require('os');
 var fs = require('fs');
 var wrench = require('wrench');
-var atomGyp, version, gypPath, cloneDir, atomDir, replaceGyp, copyProjectContentSync, isAtomRepoExist, cloneAtomRepo, updateAtomRepo, buildAtom, bootstrapAtom, buildNoBootstrap, repoUrl, checkoutVersion, generateNodeLib, rebuildNativeModules, projectName, productName, frameworkName;
+var atomGyp, version, gypPath, cloneDir, atomDir, replaceGyp, copyProjectContentSync, isAtomRepoExist, cloneAtomRepo, updateAtomRepo, buildAtom, bootstrapAtom, buildNoBootstrap, repoUrl, checkoutVersion, generateNodeLib, rebuildNativeModules, projectName, productName, frameworkName, renameProjectContent;
 
 projectName = 'testProjectName';
 productName = 'TestProductName';
 frameworkName = 'Fireball Framework';
-version = 'v0.19.5';
+version = 'v0.20.1';
 cloneDir = os.tmpDir();
 atomDir = path.join(cloneDir, 'downloaded-atom-shell-repo');
 gypPath = path.join(atomDir, 'atom.gyp');
@@ -36,8 +36,8 @@ cloneAtomRepo = function(cb) {
 
 checkoutVersion = function(cb) {
   var stream = shell([
-    'git checkout ' + version,
-    'git reset --hard HEAD'
+    'git checkout ' + version
+    //'git reset --hard HEAD'
   ], {
     cwd: atomDir
   });
@@ -51,9 +51,10 @@ checkoutVersion = function(cb) {
 
 updateAtomRepo = function(callback) {
   var stream = shell([
+      'git checkout master',
     'git reset --hard HEAD',
-    'git pull origin master',
-    'git checkout ' + version
+    'git pull origin master'
+    //'git checkout ' + version
   ], {
     cwd: atomDir
   });
@@ -98,30 +99,42 @@ buildNoBootstrap = function(cb) {
 };
 
 copyProjectContentSync = function() {
-    var appPath = path.join(atomDir, 'out/Release', productName);
+    var packagePath, appPath, destPath;
+    packagePath = path.join(atomDir, 'out/Release', productName);
+    appPath = path.join(atomDir, 'out/Release', origName);
+    destPath = path.join(__dirname, 'binaries', origName);
     if (process.platform === 'win32') {
         appPath += 'resources/app';
     } else if (process.platform === 'darwin') {
         appPath += '.app/Contents/Resources/app';
+        packagePath += '.app';
+        destPath += '.app';
     }
-    wrench.rmdirSyncRecursive(path.join(atomDir,'out/Release', productName+'.app', 'Contents','Resources','default_app'), false);
-    wrench.copyDirSyncRecursive(__dirname, appPath, {
+    wrench.copyDirSyncRecursive(packagePath, destPath, {
+        forceDelete: true,
+        excludeHiddenUnix: false,
+        inflateSymlinks: false
+    });
+    wrench.rmdirSyncRecursive(path.join(destPath, 'Contents','Resources','default_app'), false);
+    wrench.copyDirSyncRecursive(__dirname, path.join(destPath, 'Contents/Resources/app'), {
         forceDelete: true,
         excludeHiddenUnix: false,
         inflateSymlinks: false,
         exclude: /binaries|node_modules|gulpfile.js/
     });
+};
 
-    var source = path.join(atomDir, 'out/Release', productName);
-    var dest = path.join(__dirname, productName);
+renameProjectContentSync = function() {
+    var packagePath = path.join(__dirname, 'binaries', 'Atom');
     if (process.platform === 'darwin') {
-        source += '.app';
-        dest += '.app';
+        packagePath += '.app';
     }
-    wrench.copyDirSyncRecursive(source, dest, {
+    wrench.rmdirSyncRecursive(path.join(packagePath, 'Contents','Resources','default_app'), false);
+    wrench.copyDirSyncRecursive(__dirname, path.join(packagePath, 'Contents/Resources/app'), {
         forceDelete: true,
         excludeHiddenUnix: false,
-        inflateSymlinks: false
+        inflateSymlinks: false,
+        exclude: /binaries|gulpfile.js/
     });
 };
 
@@ -247,17 +260,19 @@ gulp.task('bootstrap-atom', ['get-atom-shell'], shell.task([
 
 gulp.task('copy-content', function(cb) {
     copyProjectContentSync();
-
     cb();
 });
 
 gulp.task('downloadatomshell', function(cb) {
   downloadatomshell({
-    version: '0.19.4',
+    version: '0.20.1',
     outputDir: 'binaries'
   }, cb);
 });
-
+gulp.task('download-rename', ['downloadatomshell'], function(cb) {
+    renameProjectContentSync();
+    cb();
+});
 gulp.task('open-atom', shell.task([
   'binaries/Atom.app/Contents/MacOS/Atom .'
 ]));
